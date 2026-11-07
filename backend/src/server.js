@@ -15,8 +15,8 @@ if (process.env.NODE_ENV !== 'test') {
   connectDatabase()
     .then((mongoClient) => {
       setSessionStore(MongoStore.create({ client: mongoClient, collectionName: 'sessions' }));
-      server = app.listen(env.port, () => {
-        console.log(`LifeLine Blood Bank platform running at http://localhost:${env.port}`);
+      server = app.listen(env.port, '0.0.0.0', () => {
+        console.log(`LifeLine Blood Bank platform running on port ${env.port}`);
         console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
         console.log(`Frontend Views: ${env.paths.views}`);
       });

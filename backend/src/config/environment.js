@@ -15,13 +15,16 @@ const configuredSessionSecret = process.env.SESSION_SECRET || process.env.SECRET
 const configuredTrustProxyHops = process.env.TRUST_PROXY_HOPS;
 
 if (configuredTrustProxyHops && !/^\d+$/.test(configuredTrustProxyHops)) {
+  console.error('CRITICAL: TRUST_PROXY_HOPS must be a non-negative integer.');
   throw new Error('TRUST_PROXY_HOPS must be a non-negative integer.');
 }
 if (isProduction && !configuredMongoUri) {
-  throw new Error('Set MONGODB_URI to the production database connection string.');
+  console.error('CRITICAL: MONGODB_URI is missing in production environment variables.');
+  throw new Error('Set MONGODB_URI to the production database connection string in your Render Environment tab.');
 }
 if (isProduction && (!configuredSessionSecret || configuredSessionSecret.length < 32)) {
-  throw new Error('Set SESSION_SECRET to a random value of at least 32 characters in .env.');
+  console.error('CRITICAL: SESSION_SECRET is missing or shorter than 32 characters in production.');
+  throw new Error('Set SESSION_SECRET to a random value of at least 32 characters in your Render Environment tab.');
 }
 if (!configuredSessionSecret && !isTest) {
   console.warn('No SESSION_SECRET configured; using a temporary local-development session secret.');

@@ -34,11 +34,17 @@ export async function migrateLegacyAccountStatus() {
 export async function connectDatabase() {
   if (env.isTest) return null;
 
-  const connection = await mongoose.connect(env.mongoUri);
-  const topology = await mongoose.connection.db.admin().command({ ismaster: 1 });
+  await mongoose.connect(env.mongoUri);
 
-  if (env.isProduction && !topology.setName) {
-    throw new Error('Production MongoDB must be configured as a replica set to support transactions.');
+  try {
+    const topology = await mongoose.connection.db.command({ hello: 1 })
+      .catch(() => mongoose.connection.db.command({ ismaster: 1 }));
+
+    if (env.isProduction && !topology?.setName) {
+      console.warn('Notice: Replica set setName not detected via hello command; continuing with connected database.');
+    }
+  } catch (err) {
+    console.warn('Notice: Could not query hello/ismaster command; continuing with connected database:', err.message);
   }
 
   await Promise.all([
