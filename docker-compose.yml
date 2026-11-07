@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lifeline-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/lifeline?replicaSet=rs0
+      - SESSION_SECRET=production-secret-must-be-at-least-32-chars-long-replace-in-env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - donor_uploads:/app/uploads/donors
+
+  mongodb:
+    image: mongo:6.0
+    container_name: lifeline-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        /usr/local/bin/docker-entrypoint.sh mongod --replSet rs0 --bind_ip_all &
+        MONGOD_PID=$$!
+        echo "Waiting for MongoDB startup..."
+        until mongosh --eval "db.adminCommand('ping')" > /dev/null 2>&1; do
+          sleep 1
+        done
+        echo "Initiating replica set rs0..."
+        mongosh --eval "try { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb:27017' }] }); } catch (e) { print(e); }"
+        wait $$MONGOD_PID
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: mongosh --eval "rs.status().ok" | grep 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  mongo_data:
+  donor_uploads:
+
