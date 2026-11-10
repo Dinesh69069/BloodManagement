@@ -4,12 +4,14 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install --omit=dev
+    buildCommand: npm ci --omit=dev
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20
       - key: MONGODB_URI
         sync: false
       - key: SESSION_SECRET
